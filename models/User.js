@@ -31,6 +31,12 @@ const userSchema = new mongoose.Schema(
     verificationTokenExpiry: {
       type: Date,
     },
+    otp: {
+      type: Number,
+    },
+    otpExpiry: {
+      type: Date,
+    },
     accessToken: {
       type: String,
     },

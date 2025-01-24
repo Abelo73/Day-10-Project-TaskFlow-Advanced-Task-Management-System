@@ -4,6 +4,7 @@ const { hashPassword, comparePassword } = require("../utils/passwordUtils");
 const { sendEmail } = require("../utils/sendEmail");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
+const bcrypt = require("bcryptjs");
 
 // Get all users
 
@@ -23,81 +24,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({ message: error.message, status: false });
   }
 });
-
-// // Register a new user
-// router.post("/", async (req, res) => {
-//   try {
-//     const { name, email, password } = req.body;
-//     if (!name || !email || !password) {
-//       return res.status(400).json({
-//         message: "Please fill in all fields",
-//         status: false,
-//       });
-//     }
-
-//     // Check email is already used or not
-
-//     const existingUser = await TaskUser.findOne({ email });
-
-//     if (existingUser) {
-//       return res.status(400).json({
-//         message: "Email already in use",
-//         status: false,
-//       });
-//     }
-
-//     // Hash password
-//     const hashedPassword = await hashPassword(password);
-//     const user = new TaskUser({
-//       name,
-//       email,
-//       password: hashedPassword,
-//     });
-
-//     // Save user to database
-//     await user.save();
-
-//     // Generate a JWT token for email verification
-
-//     const verificationToken = jwt.sign(
-//       { email },
-//       process.env.ACCESS_TOKEN_SECRET,
-//       { expiresIn: "1h" }
-//     );
-//     console.log("Email verification token: ", verificationToken);
-
-//     const verificationTokenExpiry = new Date(Date.now()+ 60 *60 *1000) //
-//     // verificationLink
-
-//     const verificationLink = `${req.protocol}://${req.get("host")}/api/auth/verify?token=${verificationToken}`;
-
-//     // const verificationLink = "http://localhost:8080/api/auth";
-//     // const verificationLink = `${req.protocol}://${req.get("host")}/api/auth`;
-
-//     // send email to user to verify email
-//     await sendEmail(
-//       email,
-//       "Verify your email",
-//       `Please click on this link to verify your email: ${verificationLink}`
-//     );
-
-//     // await sendEmail({
-//     //   to: email,
-//     //   subject: "Verify your email",
-//     //   text: `Please click on this link to verify your email: ${verificationLink}`,
-//     // });
-//     console.log(
-//       `Please click on the link to verify your email: ${verificationLink}`
-//     );
-//     res.status(201).json({
-//       message: "User created successfully. Verify your email.",
-//       status: true,
-//       data: user,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message, status: false });
-//   }
-// });
 
 // Register a new user
 router.post("/", async (req, res) => {
@@ -169,64 +95,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// // Email verification endpoint using GET
-// router.get("/verify", async (req, res) => {
-//   const { token } = req.query; // Use req.query to get the token from query params
-
-//   if (!token) {
-//     return res
-//       .status(400)
-//       .json({ message: "Token is required", status: false });
-//   }
-
-//   try {
-//     // Decode the token to get the email
-//     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
-//     // Check if the token is still valid (if it hasn't expired)
-//     const user = await TaskUser.findOne({
-//       email: decoded.email,
-//       verificationToken: token, // Ensure token matches what is stored
-//       verificationTokenExpiry: { $gte: new Date() }, // Check token expiry
-//     });
-
-//     if (!user) {
-//       return res.status(404).json({
-//         message: "Invalid or expired verification token",
-//         status: false,
-//       });
-//     }
-
-//     // Check if the user is already verified
-//     if (user.isVerified) {
-//       return res.status(200).json({
-//         message: "Your email is already verified",
-//         status: true,
-//       });
-//     }
-
-//     // Token is valid, update the user's verified status
-//     user.isVerified = true;
-//     // user.verificationToken = null; // Clear the token after verification
-//     user.verificationTokenExpiry = null; // Clear the expiry
-//     await user.save(); // Save the updated user status
-
-//     await sendEmail(
-//       email,
-//       "Email verified successfully",
-//       `You have been successfully verified your email. Thanks for our Task Management System.`
-//     );
-
-//     // Send a success message (this could also be a redirect in a real app)
-//     res.status(200).json({
-//       message: "Email verified successfully",
-//       status: true,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: "Invalid token", status: false });
-//   }
-// });
-
 // Email verification endpoint using GET
 router.get("/verify", async (req, res) => {
   const { token } = req.query; // Use req.query to get the token from query params
@@ -285,23 +153,15 @@ router.get("/verify", async (req, res) => {
   }
 });
 
-// Login with password, email, and confirmPassword
 router.post("/login", async (req, res) => {
-  const { email, password, confirmPassword } = req.body;
+  const { email, password } = req.body;
   console.log("Login requests: ", email, password);
+
   try {
     // input validation
-
-    if (!email || !password || !confirmPassword) {
+    if (!email || !password) {
       return res.status(400).json({
-        message: "Please provide all required fields",
-        status: false,
-      });
-    }
-
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        message: "Passwords do not match",
+        message: "Please provide both email and password",
         status: false,
       });
     }
@@ -316,6 +176,7 @@ router.post("/login", async (req, res) => {
         status: false,
       });
     }
+
     // Check if user is verified
     if (!user.isVerified) {
       return res.status(400).json({
@@ -324,13 +185,21 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    // Check if the password matches
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Incorrect password",
+        status: false,
+      });
+    }
+
     // Generate JWT token
     const token = jwt.sign(
       { userId: user._id },
       process.env.ACCESS_TOKEN_SECRET,
-      {
-        expiresIn: "1h",
-      }
+      { expiresIn: "1h" }
     );
 
     // Login success
@@ -339,8 +208,6 @@ router.post("/login", async (req, res) => {
       status: true,
       token: token,
     });
-
-    // Check if the email and password match
   } catch (error) {
     res.status(500).json({
       message: `Error while login, ${error.message}`,
@@ -348,6 +215,241 @@ router.post("/login", async (req, res) => {
     });
   }
 });
+
+// Filter only verified users
+
+router.get("/verified", async (req, res) => {
+  try {
+    const users = await TaskUser.find({ isVerified: true });
+    console.log("Only verified users filtered, ", users);
+
+    if (!users) {
+      return res.status(404).json({
+        message: "No verified users found",
+        status: false,
+      });
+    }
+    res.status(200).json({
+      message: "Verified users fetched successfully",
+      status: true,
+      data: users,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Error while fetching user, ${error.message}`,
+      status: false,
+    });
+  }
+});
+
+// Sending OTP by email
+router.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+        status: false,
+      });
+    }
+    const user = await TaskUser.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: `User not found with email: ${email}`,
+        status: false,
+      });
+    }
+
+    // Generate 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000); //
+    console.log("Generated OTP ", otp);
+    const otpExpiry = Date.now() + 15 * 60 * 1000;
+    console.log("OTP Expiry, ", otpExpiry);
+
+    // Save OTP and expiry in user document
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+
+    await user.save();
+
+    // Send email with the verification link
+    await sendEmail(
+      email,
+      "Reset password OTP",
+      `Your password reset OTP is ${otp} and it will expire in 5 minutes.`
+    );
+    res.status(200).json({
+      message: "OTP sent successfully",
+      status: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Error while sending OTP, ${error.message}`,
+      status: false,
+    });
+  }
+});
+
+// Verify OTP
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({
+        message: "Email and OTP are required",
+        status: false,
+      });
+    }
+
+    const user = await TaskUser.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+    // Compare OTP is valid or not expired or not
+    if (user.otp !== otp) {
+      return res.status(400).json({
+        message: "Invalid OTP",
+        status: false,
+      });
+    }
+
+    if (user.otpExpiry < Date.now()) {
+      return res.status(400).json({
+        message: "OTP expired",
+        status: false,
+      });
+    }
+
+    // verify otp success
+    await TaskUser.updateOne({ email }, { $set: { otp: "", otpExpiry: "" } });
+    res.status(200).json({
+      message: "OTP verified successfully",
+      status: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Error while verifying OTP, ${error.message}`,
+      status: false,
+    });
+  }
+});
+
+// Change password
+router.post("/change-password", async (req, res) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    // Validate input
+    if (!email || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message: "Email, New Password, and Confirm Password are required",
+        status: false,
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "New Password and Confirm Password do not match",
+        status: false,
+      });
+    }
+
+    // Find user by email
+    const user = await TaskUser.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the password in the database
+    await TaskUser.updateOne({ email }, { $set: { password: hashedPassword } });
+
+    res.status(200).json({
+      message: "Password changed successfully",
+      status: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Error while changing password, ${error.message}`,
+      status: false,
+    });
+  }
+});
+
+// Forgot password
+
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+        status: false,
+      });
+    }
+    const user = await TaskUser.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+    const password = Math.floor(100000 + Math.random() * 900000);
+
+    // set password
+    const hashedPassword = await bcrypt.hash(password.toString(), 10);
+    await TaskUser.updateOne({ email }, { $set: { password: hashedPassword } });
+
+    await sendEmail(
+      email,
+      "Reset Password",
+      `Your new password is: ${password}`
+    );
+    res.status(200).json({
+      message:
+        "Temporary password sent successfully, check in your email and login with it",
+      status: true,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Error while changing password, ${error.message}`,
+      status: false,
+    });
+  }
+});
+// fetch single user
+
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await TaskUser.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+    res.status(200).json({
+      message: "User fetched successfully",
+      status: true,
+      data: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: `Error while fetching user, ${error.message}`,
+      status: false,
+    });
+  }
+});
+
+// Delete a user
 
 router.delete("/:id", async (req, res) => {
   try {
