@@ -285,6 +285,70 @@ router.get("/verify", async (req, res) => {
   }
 });
 
+// Login with password, email, and confirmPassword
+router.post("/login", async (req, res) => {
+  const { email, password, confirmPassword } = req.body;
+  console.log("Login requests: ", email, password);
+  try {
+    // input validation
+
+    if (!email || !password || !confirmPassword) {
+      return res.status(400).json({
+        message: "Please provide all required fields",
+        status: false,
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: "Passwords do not match",
+        status: false,
+      });
+    }
+
+    // Find user by email
+    const user = await TaskUser.findOne({ email });
+    console.log("USER: ", user);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+        status: false,
+      });
+    }
+    // Check if user is verified
+    if (!user.isVerified) {
+      return res.status(400).json({
+        message: "Email is not verified",
+        status: false,
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    );
+
+    // Login success
+    res.status(200).json({
+      message: "Login successful",
+      status: true,
+      token: token,
+    });
+
+    // Check if the email and password match
+  } catch (error) {
+    res.status(500).json({
+      message: `Error while login, ${error.message}`,
+      status: false,
+    });
+  }
+});
+
 router.delete("/:id", async (req, res) => {
   try {
     const id = req.params.id;
