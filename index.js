@@ -7,6 +7,8 @@ const userRoutes = require("./routers/userRoutes");
 const taskRoutes = require("./routers/taskRoutes");
 const notificationRoutes = require("./routers/notificationRoutes");
 const projectRoutes = require("./routers/projectRoutes");
+// const projectRoutes = require("./routers/projectRoutes");
+// const projectRoutes = require("./routers/projectRoutes");
 // middlewares
 
 app.use(express.json());
