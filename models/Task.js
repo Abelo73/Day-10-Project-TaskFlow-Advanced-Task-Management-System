@@ -35,20 +35,7 @@ const taskSchema = new mongoose.Schema(
         message: "Due date must be in the future",
       },
     },
-    // assignedTo: [
-    //   {
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: "TaskUser",
-    //     validate: {
-    //       validator: function (users) {
-    //         if (!Array.isArray(users)) return false; // Ensure users is an array
-    //         const uniqueUsers = new Set(users.map((user) => user.toString()));
-    //         return users.length <= 5 && uniqueUsers.size === users.length;
-    //       },
-    //       message: "Cannot assign to more than 5 unique users",
-    //     },
-    //   },
-    // ],
+
     assignedTo: [
       {
         type: mongoose.Schema.Types.ObjectId,

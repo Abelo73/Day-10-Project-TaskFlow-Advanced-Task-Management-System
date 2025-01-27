@@ -1,10 +1,9 @@
-// const { extractUserId, validateToken } = require("../utils/jwtUtils");
+const jwt = require("jsonwebtoken");
 const TaskUser = require("../models/User");
 require("dotenv").config();
-// Middleware to verify JWT and extract the current User
 
 const authenticateUser = async (req, res, next) => {
-  const token = req.header("Authorization")?.replace("Bearer ", ""); // Get token from Authorization header
+  const token = req.header("Authorization")?.replace("Bearer ", "");
   const secretKey = process.env.ACCESS_TOKEN_SECRET;
 
   if (!token) {
@@ -12,26 +11,26 @@ const authenticateUser = async (req, res, next) => {
   }
 
   try {
-    // Verify the token and extract user data
     const decoded = jwt.verify(token, secretKey);
 
-    // Find the user by access token
-    const user = await TaskUser.findOne({
-      _id: decoded.userId,
-      accessToken: token,
-    });
+    // Log decoded token
+    console.log("Decoded Token:", decoded);
 
-    console.log("USER from access token: ", user);
+    // Find user by ID (and accessToken if applicable)
+    const user = await TaskUser.findById(decoded.userId);
+
     if (!user) {
       return res
         .status(401)
         .json({ message: "User not found or token expired" });
     }
-    console.log("Authenticated User", user);
-    // Attach user data to request object
+
+    console.log("Authenticated User:", user);
+
     req.user = user;
     next();
   } catch (err) {
+    console.error("Authentication Error:", err.message);
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
