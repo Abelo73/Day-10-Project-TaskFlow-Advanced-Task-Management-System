@@ -4,7 +4,8 @@ const morgan = require("morgan");
 const app = express();
 const connectDB = require("./config/db");
 const userRoutes = require("./routers/userRoutes");
-
+const taskRoutes = require("./routers/taskRoutes");
+const notificationRoutes = require("./routers/notificationRoutes");
 // middlewares
 
 app.use(express.json());
@@ -17,11 +18,8 @@ connectDB();
 
 app.use("/api/auth", userRoutes);
 
-app.get("/api/task", (req, res) => {
-  res.json({
-    message: "API for task is running",
-  });
-});
+app.use("/api/tasks", taskRoutes);
+app.use("/api/notification", notificationRoutes);
 
 const PORT = process.env.PORT || 3000;
 

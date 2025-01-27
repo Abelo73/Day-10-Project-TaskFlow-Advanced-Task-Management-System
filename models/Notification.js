@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const notificationSchema = new mongoose.model(
+const notificationSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,7 +20,9 @@ const notificationSchema = new mongoose.model(
       ref: "Task",
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true, // Correct way to enable timestamps
+  }
 );
 
 module.exports = mongoose.model("Notification", notificationSchema); //export the model

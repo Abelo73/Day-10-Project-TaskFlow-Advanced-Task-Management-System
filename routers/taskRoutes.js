@@ -1,19 +1,22 @@
 const express = require("express");
-const Task = require("../models/Task");
-const { hashPassword, comparePassword } = require("../utils/passwordUtils");
-const { sendEmail } = require("../utils/sendEmail");
-const jwt = require("jsonwebtoken");
+// const Task = require("../models/Task");
+const {
+  createTask,
+  getTasks,
+  getTaskById,
+  updateTask,
+  deleteTask,
+  assignUsersToTask,
+  unassignUsersFromTask,
+} = require("../controllers/taskController");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
 
-// Get all tasks
+router.post("/", createTask);
+router.get("/", getTasks);
+router.get("/:id", getTaskById);
+router.put("/:id", updateTask);
+router.delete("/:id", deleteTask);
+router.post("/assign-users", assignUsersToTask);
+router.post("/unassign-users", unassignUsersFromTask);
 
-router.get("/", async (req, res) => {
-  try {
-  } catch (error) {
-    res.status(500).json({
-      message: `Error while fetching tasks. ${error.message}`,
-      status:false
-    });
-  }
-});
+module.exports = router;

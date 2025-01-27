@@ -178,12 +178,12 @@ router.post("/login", async (req, res) => {
     }
 
     // Check if user is verified
-    if (!user.isVerified) {
-      return res.status(400).json({
-        message: "Email is not verified",
-        status: false,
-      });
-    }
+    // if (!user.isVerified) {
+    //   return res.status(400).json({
+    //     message: "Email is not verified",
+    //     status: false,
+    //   });
+    // }
 
     // Check if the password matches
     const isMatch = await bcrypt.compare(password, user.password);
