@@ -24,7 +24,7 @@ const projectSchema = new mongoose.Schema(
     priority: {
       type: String,
       enum: ["LOW", "MEDIUM", "HIGH"],
-      default: "MEDIUM",
+      default: "LOW",
     },
     startDate: {
       type: Date,

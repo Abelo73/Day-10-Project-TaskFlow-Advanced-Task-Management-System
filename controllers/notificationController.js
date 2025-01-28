@@ -5,16 +5,14 @@ exports.createNotification = async (req, res) => {
   try {
     const { userId, message, taskId = null } = req.body;
 
-    // Validate userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID format" });
     }
 
-    // Create the notification
     const notification = await Notification.create({
-      user: new mongoose.Types.ObjectId(userId), // Use `new` with ObjectId
+      user: new mongoose.Types.ObjectId(userId),
       message: message,
-      task: taskId ? new mongoose.Types.ObjectId(taskId) : null, // Use `new` for taskId as well
+      task: taskId ? new mongoose.Types.ObjectId(taskId) : null,
     });
 
     res.status(201).json({
@@ -34,12 +32,10 @@ exports.getNotification = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Validate userId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ message: "Invalid user ID format" });
     }
 
-    // Use `new` with ObjectId
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
     const notifications = await Notification.find({ user: userObjectId }).sort({
@@ -55,12 +51,65 @@ exports.getNotification = async (req, res) => {
     });
   }
 };
+exports.getUnMarkedNotification = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { page = 1, limit = 10 } = req.query; // Default values: page 1, limit 10
+
+    // Validate user ID format
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID format" });
+    }
+
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
+
+    // Query unmarked notifications with pagination
+    const unMarkedNotifications = await Notification.find({
+      user: userId,
+      isRead: false,
+    })
+      .sort({ createdAt: -1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit));
+
+    // Get the total count of unmarked notifications
+    const total = await Notification.countDocuments({
+      user: userId,
+      isRead: false,
+    });
+
+    // Check if notifications are found
+    if (!unMarkedNotifications.length) {
+      return res.status(404).json({
+        message: "No unmarked notifications found",
+        status: false,
+      });
+    }
+
+    // Return paginated response
+    return res.status(200).json({
+      message: "Unmarked notifications found",
+      status: true,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      data: unMarkedNotifications,
+    });
+  } catch (error) {
+    console.error("Error fetching unmarked notifications:", error);
+    return res.status(500).json({
+      message: "An error occurred while fetching unmarked notifications",
+      status: false,
+      error: error.message,
+    });
+  }
+};
 
 exports.markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
 
-    // Ensure notificationId is valid
     if (!mongoose.Types.ObjectId.isValid(notificationId)) {
       return res.status(400).json({ message: "Invalid notification ID" });
     }
