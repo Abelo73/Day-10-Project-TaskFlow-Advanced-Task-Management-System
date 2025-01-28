@@ -11,6 +11,7 @@ const userRoutes = require("./routers/userRoutes");
 const taskRoutes = require("./routers/taskRoutes");
 const notificationRoutes = require("./routers/notificationRoutes");
 const projectRoutes = require("./routers/projectRoutes");
+const auditRoutes = require("./routers/auditRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -37,6 +38,7 @@ app.use("/api/auth", userRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/notification", notificationRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/audits", auditRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

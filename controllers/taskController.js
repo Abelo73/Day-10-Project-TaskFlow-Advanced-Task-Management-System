@@ -1,7 +1,6 @@
 const { getSocket } = require("../socket");
-// const socketIo = require("socket.io");
-
 const Task = require("../models/Task");
+const Audit = require("../models/Audit");
 const TaskUser = require("../models/User");
 const { ObjectId } = require("mongodb");
 const Notification = require("../models/Notification");
@@ -24,6 +23,22 @@ exports.createTask = async (req, res) => {
 
     // Save the task to the database
     const savedTask = await task.save();
+
+    console.log("Saved Task", savedTask);
+
+    // Create audit record
+
+    const audit = new Audit({
+      actionType: "create",
+      model: "Task",
+      documentId: task.createdBy,
+      userId: task.createdBy,
+      description: `Task "${task.title}" created`,
+    });
+
+    console.log("Saved Audit");
+
+    await audit.save();
 
     // Send notifications to the users assigned to the task
     const message = `You have been assigned to the task "${savedTask.title}".`;
@@ -159,6 +174,7 @@ exports.updateTask = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Task not found" });
     }
+
     res.status(200).json({ success: true, data: task });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -250,7 +266,17 @@ exports.assignUsersToTask = async (req, res) => {
         taskTitle: task.title,
       });
     });
+    const audit = new Audit({
+      actionType: "assign",
+      model: "Task",
+      documentId: task.createdBy,
+      userId: task.createdBy,
+      description: `Task "${task.title}" assigned to "${taskId.name}"`,
+    });
 
+    console.log("Saved Audit");
+
+    await audit.save();
     res.status(200).json({
       message: "Users assigned to task successfully",
       task,
@@ -304,6 +330,18 @@ exports.unassignUsersFromTask = async (req, res) => {
     task.assignedTo = task.assignedTo.filter(
       (id) => !usersToRemove.includes(id.toString())
     );
+
+    const audit = new Audit({
+      actionType: "remove",
+      model: "Task",
+      documentId: task.createdBy,
+      userId: task.createdBy,
+      description: `Task "${task.title}" unassigned to "${taskId.name}"`,
+    });
+
+    console.log("Saved Audit");
+
+    await audit.save();
 
     // Save the task
     await task.save();
