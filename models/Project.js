@@ -81,6 +81,22 @@ projectSchema.virtual("duration").get(function () {
   return Math.ceil(diffTime / (1000 * 3600 * 24)); // Duration in days
 });
 
+// Post hook to send notification on project creation or update
+projectSchema.post("save", function (doc) {
+  const message = this.isNew
+    ? `Project "${doc.name}" has been created.`
+    : `Project "${doc.name}" has been updated.`;
+
+  doc.members.forEach((member) => {
+    Notification.create({
+      user: member,
+      type: "ProjectUpdate",
+      project: doc._id,
+      message: message,
+    });
+  });
+});
+
 // Indexes for faster querying
 projectSchema.index({ status: 1 });
 projectSchema.index({ startDate: 1 });

@@ -7,6 +7,26 @@ const notificationSchema = new mongoose.Schema(
       ref: "TaskUser",
       required: true,
     },
+    type: {
+      type: String,
+      enum: [
+        "TaskUpdate", // Updates to a task (comments, file uploads, edits)
+        "TaskAssignment", // When a task is assigned
+        "StatusChange", // When task/project status changes
+        "PriorityChange", // When task priority changes
+        "ProjectUpdate", // Updates related to a project
+        "GeneralNotification", // For other general notifications
+      ],
+      required: true,
+    },
+    task: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Task",
+    },
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Project",
+    },
     message: {
       type: String,
       required: true,
@@ -15,14 +35,14 @@ const notificationSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    task: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Task",
+    metaData: {
+      type: Object, // Store additional details, like old/new priority or status
+      default: null,
     },
   },
   {
-    timestamps: true, // Correct way to enable timestamps
+    timestamps: true, // Automatically adds createdAt and updatedAt fields
   }
 );
 
-module.exports = mongoose.model("Notification", notificationSchema); //export the model
+module.exports = mongoose.model("Notification", notificationSchema);

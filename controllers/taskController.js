@@ -1,41 +1,71 @@
+const { getSocket } = require("../socket");
+// const socketIo = require("socket.io");
+
 const Task = require("../models/Task");
 const TaskUser = require("../models/User");
 const { ObjectId } = require("mongodb");
+const Notification = require("../models/Notification");
 
-// Create a new Task
-
+// Create a new task
 exports.createTask = async (req, res) => {
   try {
-    const { title, description, status, createdBy } = req.body;
+    const { title, description, priority, dueDate, assignedTo, createdBy } =
+      req.body;
 
-    // Validate the `createdBy` user
-    const user = await TaskUser.findById(createdBy);
-    if (!user) {
-      return res
-        .status(400)
-        .json({ status: false, message: "Invalid creator ID" });
-    }
-
-    // Create a new task
-    const newTask = new Task({
+    // Create the new task
+    const task = new Task({
       title,
       description,
-      status,
+      priority,
+      dueDate,
+      assignedTo,
       createdBy,
     });
 
-    await newTask.save();
+    // Save the task to the database
+    const savedTask = await task.save();
+
+    // Send notifications to the users assigned to the task
+    const message = `You have been assigned to the task "${savedTask.title}".`;
+    assignedTo.forEach((userId) => {
+      Notification.create({
+        user: userId,
+        type: "TaskAssignment",
+        task: savedTask._id,
+        message: message,
+      });
+
+      const io = getSocket();
+
+      // Emit the task notification to all connected clients
+      // io.emit("taskNotification", task);
+      // Emit real-time notifications using Socket.IO
+      io.emit("taskNotification", {
+        message: message,
+        taskId: savedTask._id,
+        type: "TaskCreated",
+        taskTitle: savedTask.title,
+      });
+
+      io.to(userId).emit("taskNotification", {
+        message: message,
+        taskId: savedTask._id,
+        taskTitle: savedTask.title,
+      });
+    });
 
     res.status(201).json({
-      status: true,
       message: "Task created successfully",
-      task: newTask,
+      task: savedTask,
     });
   } catch (error) {
-    res.status(500).json({ status: false, message: error.message });
+    console.error("Error creating task:", error);
+    res.status(500).json({
+      message: "Error creating task",
+      error: error.message,
+    });
   }
 };
-
 // Get All Tasks with optional filters
 
 exports.getTasks = async (req, res) => {
@@ -206,6 +236,25 @@ exports.assignUsersToTask = async (req, res) => {
       });
     }
 
+    const message = `You have been assigned to task ${task.title}`;
+    const io = getSocket();
+
+    // Emit task assignment notification to all connected users
+    io.emit("taskAssigned", {
+      message: message,
+      taskId: task._id,
+      taskTitle: task.title,
+    });
+
+    // Emit real-time assignment notification to the assigned users
+    assignedUsers.forEach((userId) => {
+      io.to(userId).emit("taskAssigned", {
+        message: message,
+        taskId: task._id,
+        taskTitle: task.title,
+      });
+    });
+
     res.status(200).json({
       message: "Users assigned to task successfully",
       task,
@@ -262,6 +311,25 @@ exports.unassignUsersFromTask = async (req, res) => {
 
     // Save the task
     await task.save();
+
+    const message = `You have been removed form task: '${task.title}'`;
+    const io = getSocket();
+
+    // Emit task assignment notification to all connected users
+    io.emit("taskUnAssigned", {
+      message: message,
+      taskId: task._id,
+      taskTitle: task.title,
+    });
+
+    // Emit real-time assignment notification to the assigned users
+    userIds.forEach((userId) => {
+      io.to(userId).emit("taskUnAssigned", {
+        message: message,
+        taskId: task._id,
+        taskTitle: task.title,
+      });
+    });
 
     // Respond with success
     return res.status(200).json({

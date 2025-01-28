@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-
+const Notification = require("../models/Notification");
 const taskSchema = new mongoose.Schema(
   {
     title: {
@@ -40,15 +40,6 @@ const taskSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "TaskUser",
-        validate: {
-
-          validator: function (users) {
-            if (!Array.isArray(users)) return false; // Ensure `assignedTo` is an array
-            const uniqueUsers = new Set(users.map((user) => user.toString()));
-            return users.length <= 5 && uniqueUsers.size === users.length;
-          },
-          message: "Cannot assign to more than 5 unique users",
-        },
       },
     ],
 
@@ -72,6 +63,34 @@ const taskSchema = new mongoose.Schema(
 // Virtual property for overdue status
 taskSchema.virtual("isOverdue").get(function () {
   return this.dueDate < Date.now() && this.status !== "COMPLETED";
+});
+
+taskSchema.post("save", async function (doc) {
+  try {
+    if (this.isNew) {
+      // Notify each assigned user when a task is created
+      const notifications = doc.assignedTo.map((userId) => ({
+        user: userId,
+        type: "TaskAssignment",
+        task: doc._id,
+        message: `You have been assigned to the task "${doc.title}".`,
+      }));
+      await Notification.insertMany(notifications); // Bulk create notifications
+    }
+
+    if (this.isModified("priority")) {
+      // Notify each assigned user when the task priority changes
+      const notifications = doc.assignedTo.map((userId) => ({
+        user: userId,
+        type: "PriorityChange",
+        task: doc._id,
+        message: `The priority of task "${doc.title}" has been changed to ${doc.priority}.`,
+      }));
+      await Notification.insertMany(notifications); // Bulk create notifications
+    }
+  } catch (error) {
+    console.error("Error creating notifications:", error);
+  }
 });
 
 // Indexes for faster querying

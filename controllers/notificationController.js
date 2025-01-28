@@ -1,19 +1,17 @@
-const mongoose = require("mongoose");
+// controllers/notificationController.js
+const notificationService = require("../service/notificationService");
 const Notification = require("../models/Notification");
 
 exports.createNotification = async (req, res) => {
   try {
     const { userId, message, taskId = null } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID format" });
-    }
-
-    const notification = await Notification.create({
-      user: new mongoose.Types.ObjectId(userId),
-      message: message,
-      task: taskId ? new mongoose.Types.ObjectId(taskId) : null,
-    });
+    // Call the service to create the notification
+    const notification = await notificationService.createNotification(
+      userId,
+      message,
+      taskId
+    );
 
     res.status(201).json({
       message: "Notification created successfully",
@@ -28,73 +26,83 @@ exports.createNotification = async (req, res) => {
   }
 };
 
+// exports.getNotification = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     const notifications =
+//       await notificationService.getNotificationsByUser(userId);
+
+//     res.status(200).json({ notifications });
+//   } catch (error) {
+//     console.error("Error fetching notifications:", error);
+//     res.status(500).json({
+//       message: "Error fetching notifications",
+//       error: error.message,
+//     });
+//   }
+// };
+
 exports.getNotification = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.query;
+    const filter = userId ? { user: userId } : {};
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID format" });
+    // Fetch notifications with population and sorting
+    const notifications = await Notification.find(filter)
+      .populate("user", "name email")
+      .populate("task", "title")
+      .populate("project", "name")
+      .sort({ createdAt: -1 });
+
+    // Check if notifications array is empty
+    if (notifications.length === 0) {
+      return res.status(404).json({
+        message: "No notifications found",
+        status: false,
+        data: [],
+      });
     }
 
-    const userObjectId = new mongoose.Types.ObjectId(userId);
-
-    const notifications = await Notification.find({ user: userObjectId }).sort({
-      createdAt: -1,
+    // Return success response with notifications data
+    res.status(200).json({
+      message: "Notifications fetched successfully",
+      status: true,
+      data: notifications,
     });
-
-    res.status(200).json({ notifications });
   } catch (error) {
+    // Log the error and send a server error response
     console.error("Error fetching notifications:", error);
     res.status(500).json({
-      message: "Error fetching notifications",
+      message: "Server error occurred while fetching notifications",
+      status: false,
       error: error.message,
     });
   }
 };
+
 exports.getUnMarkedNotification = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { page = 1, limit = 10 } = req.query; // Default values: page 1, limit 10
+    const { page = 1, limit = 10 } = req.query;
 
-    // Validate user ID format
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ message: "Invalid user ID format" });
-    }
+    const { unmarkedNotifications, total } =
+      await notificationService.getUnmarkedNotifications(userId, page, limit);
 
-    // Calculate skip value for pagination
-    const skip = (page - 1) * limit;
-
-    // Query unmarked notifications with pagination
-    const unMarkedNotifications = await Notification.find({
-      user: userId,
-      isRead: false,
-    })
-      .sort({ createdAt: -1 })
-      .skip(parseInt(skip))
-      .limit(parseInt(limit));
-
-    // Get the total count of unmarked notifications
-    const total = await Notification.countDocuments({
-      user: userId,
-      isRead: false,
-    });
-
-    // Check if notifications are found
-    if (!unMarkedNotifications.length) {
+    if (!unmarkedNotifications.length) {
       return res.status(404).json({
         message: "No unmarked notifications found",
         status: false,
       });
     }
 
-    // Return paginated response
     return res.status(200).json({
       message: "Unmarked notifications found",
       status: true,
       currentPage: parseInt(page),
       totalPages: Math.ceil(total / limit),
       totalItems: total,
-      data: unMarkedNotifications,
+      data: unmarkedNotifications,
     });
   } catch (error) {
     console.error("Error fetching unmarked notifications:", error);
@@ -110,19 +118,7 @@ exports.markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(notificationId)) {
-      return res.status(400).json({ message: "Invalid notification ID" });
-    }
-
-    const notification = await Notification.findByIdAndUpdate(
-      notificationId,
-      { isRead: true },
-      { new: true }
-    );
-
-    if (!notification) {
-      return res.status(404).json({ message: "Notification not found" });
-    }
+    const notification = await notificationService.markAsRead(notificationId);
 
     res.status(200).json({
       message: "Notification marked as read",
