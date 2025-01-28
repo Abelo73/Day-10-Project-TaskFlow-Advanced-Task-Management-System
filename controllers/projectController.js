@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const { getSocket } = require("../socket");
 const Notification = require("../models/Notification");
+const Audit = require("../models/Audit");
 
 const Project = require("../models/Project");
 
@@ -49,6 +50,18 @@ exports.createProject = async (req, res) => {
 
     // Save the project to the database
     await newProject.save();
+
+    const audit = new Audit({
+      actionType: "create",
+      model: "Project",
+      documentId: newProject.createdBy,
+      userId: newProject.createdBy,
+      description: `Project "${newProject.title}" unassigned to user id "${newProject.createdBy}"`,
+    });
+
+    console.log("Saved Audit");
+
+    await audit.save();
 
     // Send notifications to the users assigned to the project
     const message = `You have been assigned to the project "${newProject.name}".`;
