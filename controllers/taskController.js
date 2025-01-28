@@ -36,10 +36,6 @@ exports.createTask = async (req, res) => {
       });
 
       const io = getSocket();
-
-      // Emit the task notification to all connected clients
-      // io.emit("taskNotification", task);
-      // Emit real-time notifications using Socket.IO
       io.emit("taskNotification", {
         message: message,
         taskId: savedTask._id,

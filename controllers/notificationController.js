@@ -26,23 +26,6 @@ exports.createNotification = async (req, res) => {
   }
 };
 
-// exports.getNotification = async (req, res) => {
-//   try {
-//     const { userId } = req.params;
-
-//     const notifications =
-//       await notificationService.getNotificationsByUser(userId);
-
-//     res.status(200).json({ notifications });
-//   } catch (error) {
-//     console.error("Error fetching notifications:", error);
-//     res.status(500).json({
-//       message: "Error fetching notifications",
-//       error: error.message,
-//     });
-//   }
-// };
-
 exports.getNotification = async (req, res) => {
   try {
     const { userId } = req.query;

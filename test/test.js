@@ -19,6 +19,19 @@ socket.on("taskUnAssigned", (task) => {
   console.log("Task unassigned:", task);
 });
 
+// Project Notifications
+socket.on("projectNotification", (project) => {
+  console.log("Received project notification:", project);
+});
+
+socket.on("ProjectAssignment", (project) => {
+  console.log("Project assigned:", project);
+});
+
+socket.on("ProjectRemoval", (project) => {
+  console.log("Received Project removal", project);
+});
+
 // Handle errors
 socket.on("connect_error", (error) => {
   console.log("Connection failed:", error);

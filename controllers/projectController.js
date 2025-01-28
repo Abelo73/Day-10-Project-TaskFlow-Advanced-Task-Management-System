@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+const { getSocket } = require("../socket");
+const Notification = require("../models/Notification");
 
 const Project = require("../models/Project");
 
@@ -48,6 +50,24 @@ exports.createProject = async (req, res) => {
     // Save the project to the database
     await newProject.save();
 
+    // Send notifications to the users assigned to the project
+    const message = `You have been assigned to the project "${newProject.name}".`;
+    const io = getSocket();
+    io.emit("projectNotification", {
+      message: message,
+      projectId: newProject._id,
+      type: "ProjectCreated",
+      projectTitle: newProject.name,
+    });
+
+    members.forEach((userId) => {
+      io.to(userId).emit("projectNotification", {
+        message: message,
+        projectId: newProject._id,
+        projectTitle: newProject.name,
+      });
+    });
+
     // Return success response with the created project
     res.status(201).json({
       message: "Project created successfully",
@@ -82,6 +102,29 @@ exports.addMemberToProject = async (req, res) => {
     if (!project.members.includes(userId)) {
       project.members.push(new mongoose.Types.ObjectId(userId)); // Cast userId to ObjectId
       await project.save();
+      // Send notification to the added member
+      const message = `You have been added to the project "${project.name}".`;
+
+      Notification.create({
+        user: userId,
+        type: "ProjectAssignment",
+        project: project._id,
+        message: message,
+      });
+
+      const io = getSocket();
+      io.to(userId).emit("ProjectAssignment", {
+        message: message,
+        projectId: project._id,
+        projectTitle: project.name,
+      });
+
+      io.emit("ProjectAssignment", {
+        message: message,
+        projectId: project._id,
+        projectTitle: project.name,
+      });
+
       res.status(200).json({ message: "User added to project", project });
     } else {
       res
@@ -109,6 +152,29 @@ exports.removeMemberFromProject = async (req, res) => {
     if (index > -1) {
       project.members.splice(index, 1);
       await project.save();
+      // Send notification to the removed member
+      const message = `You have been removed from the project "${project.name}".`;
+
+      Notification.create({
+        user: userId,
+        type: "ProjectRemoval",
+        project: project._id,
+        message: message,
+      });
+
+      const io = getSocket();
+      io.to(userId).emit("ProjectRemoval", {
+        message: message,
+        projectId: project._id,
+        projectTitle: project.name,
+      });
+
+      io.emit("ProjectRemoval", {
+        message: message,
+        projectId: project._id,
+        projectTitle: project.name,
+      });
+
       res.status(200).json({ message: "User removed from project", project });
     } else {
       res.status(400).json({ message: "User is not a member of this project" });

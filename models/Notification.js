@@ -15,6 +15,8 @@ const notificationSchema = new mongoose.Schema(
         "StatusChange", // When task/project status changes
         "PriorityChange", // When task priority changes
         "ProjectUpdate", // Updates related to a project
+        "ProjectRemoval",
+        "ProjectAssignment",
         "GeneralNotification", // For other general notifications
       ],
       required: true,

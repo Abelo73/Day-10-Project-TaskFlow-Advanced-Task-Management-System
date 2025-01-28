@@ -9,10 +9,10 @@ const {
 const { authenticateUser } = require("../middlewares/authMiddleware");
 
 // router.post("/create", authenticateUser, createProject);
-router.post("/create", authenticateUser, createProject);
-router.get("/find", authenticateUser, getProjects);
+router.post("/create", createProject);
+router.get("/find", getProjects);
 // router.post("/assign-user", addMemberToProject);
-router.post("/add-member", authenticateUser, addMemberToProject); // Use the destructured name
-router.post("/remove-member", authenticateUser, removeMemberFromProject);
+router.post("/add-member", addMemberToProject); // Use the destructured name
+router.post("/remove-member", removeMemberFromProject);
 
 module.exports = router;
