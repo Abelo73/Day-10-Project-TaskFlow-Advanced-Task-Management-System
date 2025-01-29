@@ -13,8 +13,7 @@ const notificationRoutes = require("./routers/notificationRoutes");
 const projectRoutes = require("./routers/projectRoutes");
 const auditRoutes = require("./routers/auditRoutes");
 const accessControllerRoutes = require("./routers/accessControllerRoutes");
-const authMiddleware = require("./middlewares/authMiddleware");
-const authenticateUser = require("./middlewares/authMiddleware");
+const commentRoutes = require("./routers/commentRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -43,6 +42,7 @@ app.use("/api/notification", notificationRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/audits", auditRoutes);
 app.use("/api/accessController", accessControllerRoutes);
+app.use("/api/comments", commentRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
