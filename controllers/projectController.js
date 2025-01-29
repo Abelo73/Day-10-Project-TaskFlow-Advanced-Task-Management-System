@@ -138,6 +138,17 @@ exports.addMemberToProject = async (req, res) => {
         projectTitle: project.name,
       });
 
+      const audit = new Audit({
+        actionType: "assign",
+        model: "Project",
+        documentId: project.createdBy,
+        userId: project.createdBy,
+        description: `Project "${project.title}" assigned to user id "${project.createdBy}"`,
+      });
+
+      await audit.save();
+      console.log("Saved Audit");
+
       res.status(200).json({ message: "User added to project", project });
     } else {
       res
@@ -187,6 +198,17 @@ exports.removeMemberFromProject = async (req, res) => {
         projectId: project._id,
         projectTitle: project.name,
       });
+
+      const audit = new Audit({
+        actionType: "remove",
+        model: "Project",
+        documentId: project.createdBy,
+        userId: project.createdBy,
+        description: `Project "${project.title}" unassigned to user id "${project.createdBy}"`,
+      });
+      await audit.save();
+
+      console.log("Saved Audit");
 
       res.status(200).json({ message: "User removed from project", project });
     } else {
