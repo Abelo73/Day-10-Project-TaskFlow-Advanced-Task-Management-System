@@ -14,6 +14,7 @@ const accessControlSchema = new mongoose.Schema(
         "TEAM_LEAD",
         "SUPERVISOR",
         "TEST",
+        "TESnT",
       ],
       required: true,
       unique: true,

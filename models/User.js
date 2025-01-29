@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
+const AccessControl = require("./AccessControl");
 
 const userSchema = new mongoose.Schema(
   {
@@ -21,13 +22,12 @@ const userSchema = new mongoose.Schema(
     // role: {
     //   type: String,
     //   enum: ["USER", "ADMIN", "MANAGER", "MEMBER", "GUEST"],
-    //   default: "USER",
+    //   default: "GUEST",
     // },
     role: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "AccessControl",
       required: true,
-      default: "GUEST",
     },
     isVerified: {
       type: Boolean,
@@ -60,6 +60,27 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// userSchema.pre("save", async function (next) {
+//   if (!this.role) {
+//     try {
+//       // Fetch the "GUEST" role ObjectId from AccessControl collection
+//       const guestRole = await AccessControl.findOne({ role: "GUEST" }).select(
+//         "_id"
+//       );
+//       if (guestRole) {
+//         this.role = guestRole._id; // Assign the ObjectId of GUEST to the role field
+//         console.log("Assigned role:", this.role); // Add logging here for debugging
+//       } else {
+//         throw new Error("GUEST role not found in AccessControl collection");
+//       }
+//     } catch (error) {
+//       console.log("Error in pre-save hook:", error.message); // Log errors for debugging
+//       return next(error);
+//     }
+//   }
+//   next();
+// });
 
 // // Hash password before saving
 // userSchema.pre("save", async function (next) {

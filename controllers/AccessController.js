@@ -55,30 +55,25 @@ exports.getAllRoles = async (req, res) => {
   }
 };
 
-// exports.updateRoles = async (req, res) => {
-//   try {
-//     const { permissions } = req.body;
-//     const updateRole = await AccessControl.findByIdAndUpdate(
-//       req.params.id,
-//       { permissions },
-//       { new: true }
-//     );
-//     if (!updateRole) {
-//       return res.status(404).json({
-//         message: "Role not found",
-//         status: false,
-//       });
-//     }
-//     res.status(200).json({
-//       message: "Role updated successfully",
-//       status: true,
-//       data: updateRole,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
+exports.getRoleById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const role = await AccessControl.findById(id);
+    if (!role) {
+      return res.status(404).json({
+        message: "Role not found",
+        status: false,
+      });
+    }
+    res.status(200).json({
+      message: "Role retrieved successfully",
+      status: true,
+      data: role,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 // Update roles (add/remove multiple permissions)
 exports.updateRoles = async (req, res) => {
   try {

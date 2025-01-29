@@ -1,5 +1,6 @@
 const express = require("express");
 const TaskUser = require("../models/User");
+const AccessControl = require("../models/AccessControl");
 const { hashPassword, comparePassword } = require("../utils/passwordUtils");
 const { sendEmail } = require("../utils/sendEmail");
 const jwt = require("jsonwebtoken");
@@ -28,7 +29,8 @@ router.get("/", async (req, res) => {
 // Register a new user
 router.post("/", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
+    console.log("Registration request: ", req.body);
 
     if (!name || !email || !password) {
       return res.status(400).json({
@@ -43,6 +45,15 @@ router.post("/", async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         message: "Email already in use",
+        status: false,
+      });
+    }
+
+    const roleExist = await AccessControl.findOne({ role });
+    console.log("Role exist while saving user:", roleExist);
+    if (!roleExist) {
+      return res.status(400).json({
+        message: "Invalid role. Role must exist in AccessControl",
         status: false,
       });
     }
@@ -65,9 +76,12 @@ router.post("/", async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      role: roleExist._id,
       verificationToken,
       verificationTokenExpiry,
     });
+
+    console.log("user: saving with role: ", user);
 
     // Save user to database
     await user.save();
@@ -88,7 +102,11 @@ router.post("/", async (req, res) => {
     res.status(201).json({
       message: "User registered successfully. Verify your email.",
       status: true,
-      data: { id: user._id, email: user.email, name: user.name },
+      data: {
+        id: user._id,
+        email: user.email,
+        name: user.name,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message, status: false });
