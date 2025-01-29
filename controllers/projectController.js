@@ -234,3 +234,43 @@ exports.getProjects = async (req, res) => {
       .json({ message: "Error getting projects", error: error.message });
   }
 };
+
+exports.getProjectById = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({
+        message: `Project with ${req.params.id} not found`,
+      });
+    }
+    res.status(200).json({
+      message: "Project retrieved successfully",
+      status: true,
+      data: project,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error getting project", error: error.message });
+  }
+};
+
+exports.deleteProjectById = async (req, res) => {
+  try {
+    const project = await Project.findByIdAndDelete(req.params.id);
+    if (!project) {
+      return res.status(404).json({
+        message: `Project with ${req.params.id} not found`,
+        status: false,
+      });
+    }
+    res.status(200).json({
+      message: `Project with id ${req.params.id} deleted successfully.`,
+      status: true,
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error deleting project", error: error.message });
+  }
+};

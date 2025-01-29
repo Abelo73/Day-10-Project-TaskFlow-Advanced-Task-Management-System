@@ -40,6 +40,7 @@ const checkRole = (requiredPermissions) => async (req, res, next) => {
     const hasPermission = requiredPermissions.some((permission) =>
       user.role.permissions.includes(permission)
     );
+    console.log("User Permission from checkRole middleware: ", user.role);
 
     if (!hasPermission) {
       return res.status(403).json({

@@ -13,23 +13,42 @@ const {
 } = require("../controllers/taskController");
 const router = express.Router();
 
-// router.post("/create", createTask);
-// router.get("/", getTasks);
-
 router.post(
   "/create",
   authenticateUser,
   checkPermission(["CREATE_TASK"]),
-
-  // Apply authMiddleware here
-  // checkPermission(["CREATE_TASK"]), // Apply permission check
   createTask
 );
-router.get("/", getTasks);
-router.get("/:id", getTaskById);
-router.put("/:id", updateTask);
-router.delete("/:id", deleteTask);
-router.post("/assign-users", assignUsersToTask);
-router.post("/unassign-users", unassignUsersFromTask);
+router.get("/", authenticateUser, checkPermission(["GET_TASK"]), getTasks);
+router.get(
+  "/:id",
+  authenticateUser,
+  checkPermission(["GET_TASK"]),
+  getTaskById
+);
+router.put(
+  "/:id",
+  authenticateUser,
+  checkPermission(["UPDATE_TASK"]),
+  updateTask
+);
+router.delete(
+  "/:id",
+  authenticateUser,
+  checkPermission(["DELETE_TASK"]),
+  deleteTask
+);
+router.post(
+  "/assign-users",
+  authenticateUser,
+  checkPermission(["ASSIGN_TASK"]),
+  assignUsersToTask
+);
+router.post(
+  "/unassign-users",
+  authenticateUser,
+  checkPermission(["UNASSIGN_TASK"]),
+  unassignUsersFromTask
+);
 
 module.exports = router;
