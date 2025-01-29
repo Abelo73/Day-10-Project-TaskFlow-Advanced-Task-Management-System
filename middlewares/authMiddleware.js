@@ -17,7 +17,7 @@ const authenticateUser = async (req, res, next) => {
     console.log("Decoded Token:", decoded);
 
     // Find user by ID (and accessToken if applicable)
-    const user = await TaskUser.findById(decoded.userId);
+    const user = await TaskUser.findById(decoded.userId).populate("role");
 
     if (!user) {
       return res
@@ -35,4 +35,4 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticateUser };
+module.exports = authenticateUser;

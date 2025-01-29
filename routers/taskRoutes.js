@@ -1,4 +1,6 @@
 const express = require("express");
+const checkPermission = require("../middlewares/roleMiddleware");
+const authenticateUser = require("../middlewares/authMiddleware");
 // const Task = require("../models/Task");
 const {
   createTask,
@@ -11,7 +13,18 @@ const {
 } = require("../controllers/taskController");
 const router = express.Router();
 
-router.post("/create", createTask);
+// router.post("/create", createTask);
+// router.get("/", getTasks);
+
+router.post(
+  "/create",
+  authenticateUser,
+  checkPermission(["CREATE_TASK"]),
+
+  // Apply authMiddleware here
+  // checkPermission(["CREATE_TASK"]), // Apply permission check
+  createTask
+);
 router.get("/", getTasks);
 router.get("/:id", getTaskById);
 router.put("/:id", updateTask);

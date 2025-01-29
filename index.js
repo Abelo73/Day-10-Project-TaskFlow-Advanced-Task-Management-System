@@ -13,6 +13,8 @@ const notificationRoutes = require("./routers/notificationRoutes");
 const projectRoutes = require("./routers/projectRoutes");
 const auditRoutes = require("./routers/auditRoutes");
 const accessControllerRoutes = require("./routers/accessControllerRoutes");
+const authMiddleware = require("./middlewares/authMiddleware");
+const authenticateUser = require("./middlewares/authMiddleware");
 
 const app = express();
 const server = http.createServer(app);
