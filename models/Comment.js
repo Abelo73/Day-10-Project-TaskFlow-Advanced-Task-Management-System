@@ -13,13 +13,19 @@ const commentSchema = new mongoose.Schema(
     },
     taskId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Task", // Or "Project" if it's related to a project
+      ref: "Task", 
       required: true,
     },
     parentCommentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Comment", // Used for threaded comments (optional)
+      ref: "Comment", 
     },
+    replies: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Comment", 
+      },
+    ],
     createdAt: {
       type: Date,
       default: Date.now,
@@ -30,13 +36,13 @@ const commentSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "deleted"], // Used for soft delete
+      enum: ["active", "deleted"], 
       default: "active",
     },
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "TaskUser", // Store the users who liked this comment
+        ref: "TaskUser", 
       },
     ],
     totalLikes: {
