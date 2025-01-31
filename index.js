@@ -14,6 +14,7 @@ const projectRoutes = require("./routers/projectRoutes");
 const auditRoutes = require("./routers/auditRoutes");
 const accessControllerRoutes = require("./routers/accessControllerRoutes");
 const commentRoutes = require("./routers/commentRoutes");
+const teamRoutes = require("./routers/teamRoutes");
 
 const app = express();
 const server = http.createServer(app);
@@ -43,6 +44,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/audits", auditRoutes);
 app.use("/api/accessController", accessControllerRoutes);
 app.use("/api/comments", commentRoutes);
+app.use("/api/teams", teamRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
